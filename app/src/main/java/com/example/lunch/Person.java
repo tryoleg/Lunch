@@ -1,5 +1,5 @@
 package com.example.lunch;
-//class Person
+
 public class Person {
     public String name, phone, choice, number_portion;
 
