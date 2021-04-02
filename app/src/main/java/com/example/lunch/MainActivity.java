@@ -11,12 +11,15 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.Checkable;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TableLayout;
@@ -41,8 +44,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     DBHelper dbHelper;
     private DatabaseReference myDataBase;
     ArrayList<String> arrayList_Name = null;
-    ArrayList<String> arrayList_Phone = null;
     ArrayList<String> arrayList_Portion = null;
+    ArrayList<String> arrayList_AnswerToday = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         init_view();
         update_list();
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        Cursor c = db.query("MYTABLE1_1", null, null, null, null, null, null);
+        Cursor c = db.query("TABLE1", null, null, null, null, null, null);
         if (!c.moveToFirst()) { //проверим зарегистрирован пользователь или нет
             Intent intent = new Intent(MainActivity.this, RegistrationActivity.class);
             startActivity(intent);
@@ -66,14 +69,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         });
-        thread.start();
+        //thread.start();
         Thread block_reset = new Thread(new Runnable() {
             @Override
             public void run() {
                 boolean state = false;
                 while (!state) {
                     SQLiteDatabase db = dbHelper.getWritableDatabase();
-                    Cursor cursor = db.query("MYTABLE1_1", null, null, null, null, null, null);
+                    Cursor cursor = db.query("TABLE1", null, null, null, null, null, null);
                     if (cursor.getCount() != 0) {
                         state = true;
                     }
@@ -113,8 +116,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     void init_view() {
         arrayList_Name = new ArrayList<>();
-        arrayList_Phone = new ArrayList<>();
         arrayList_Portion = new ArrayList<>();
+        arrayList_AnswerToday = new ArrayList<>();
 
         btn_yes = (Button) findViewById(R.id.btn_yes);
         btn_no = (Button) findViewById(R.id.btn_no);
@@ -140,10 +143,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @SuppressLint("SetTextI18n")
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                int i=0;
+                int i = 0;
+
                 arrayList_Portion.clear();
                 arrayList_Name.clear();
-                arrayList_Phone.clear();
+                arrayList_AnswerToday.clear();
+
                 tableLayout.removeAllViews();
 
                 TableRow tableRow1 = new TableRow(MainActivity.this);
@@ -153,20 +158,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 TextView tv7 = new TextView(MainActivity.this);
                 TextView tv8 = new TextView(MainActivity.this);
 
+                tv6.setTextSize(18);
+                tv7.setTextSize(18);
+                tv8.setTextSize(18);
+
                 tv6.setTextColor(Color.WHITE);
                 tv7.setTextColor(Color.WHITE);
                 tv8.setTextColor(Color.WHITE);
+
+                tv6.setTypeface(Typeface.DEFAULT_BOLD);
+                tv7.setTypeface(Typeface.DEFAULT_BOLD);
+                tv8.setTypeface(Typeface.DEFAULT_BOLD);
 
                 tv6.setBackgroundResource(R.drawable.myshape);
                 tv7.setBackgroundResource(R.drawable.myshape);
                 tv8.setBackgroundResource(R.drawable.myshape);
 
                 tv6.setText(" ФИО ");
-                tv7.setText(" Моб. номер ");
+                tv7.setText(" Выбор сделан ");
                 tv8.setText(" Количество порций ");
 
-                tableRow1.addView(tv6);
                 tableRow1.addView(tv7);
+                tableRow1.addView(tv6);
                 tableRow1.addView(tv8);
 
                 tableLayout.addView(tableRow1);
@@ -176,13 +189,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         TableRow tableRow = new TableRow(MainActivity.this);
                         tableRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT));
 
+                        arrayList_AnswerToday.add(person.answer_today);
                         arrayList_Name.add(person.name);
-                        arrayList_Phone.add(person.phone);
                         arrayList_Portion.add(person.number_portion);
 
                         TextView tv2 = new TextView(MainActivity.this);
                         TextView tv3 = new TextView(MainActivity.this);
                         TextView tv4 = new TextView(MainActivity.this);
+
+                        CheckBox checkBox = new CheckBox(MainActivity.this);
+                        checkBox.setBackgroundResource(R.drawable.myshape);
+
+                        checkBox.setClickable(false);
+                        if(arrayList_AnswerToday.get(i).equals("1")){
+                            checkBox.setChecked(true);
+                        }
+                        else{
+                            checkBox.setChecked(false);
+                        }
 
                         tv2.setTextColor(Color.WHITE);
                         tv3.setTextColor(Color.WHITE);
@@ -192,14 +216,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         tv3.setBackgroundResource(R.drawable.myshape);
                         tv4.setBackgroundResource(R.drawable.myshape);
 
-                        tv2.setText(" "+arrayList_Name.get(i)+" ");
-                        tv3.setText(" "+arrayList_Phone.get(i)+" ");
-                        tv4.setText(" "+arrayList_Portion.get(i)+" ");
+                        tv2.setText(" " + arrayList_Name.get(i) + " ");
+                        tv3.setText(" " + arrayList_AnswerToday.get(i) + " ");
+                        tv4.setText(" " + arrayList_Portion.get(i) + " ");
 
                         i++;
 
+                        tableRow.addView(checkBox);
+
+                        //tableRow.addView(tv3);
                         tableRow.addView(tv2);
-                        tableRow.addView(tv3);
                         tableRow.addView(tv4);
 
                         tableLayout.addView(tableRow);
@@ -216,13 +242,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     void block_button() {
         SQLiteDatabase database = dbHelper.getWritableDatabase();
-        Cursor cursor = database.query("MYTABLE1_1", null, null, null, null, null, null);
-        if(cursor.moveToFirst()){
+        Cursor cursor = database.query("TABLE1", null, null, null, null, null, null);
+        final boolean[] person = {false};
+        if (cursor.moveToFirst()) {
             int nameColIndex = cursor.getColumnIndex("name");
-            if (cursor.getString(nameColIndex).equals("admin")){
+            if (cursor.getString(nameColIndex).equals("admin")) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        person[0] = true;
                         textView.setVisibility(View.INVISIBLE);
                     }
                 });
@@ -256,27 +284,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     });
                 }
             } else if (calendar.get(Calendar.HOUR_OF_DAY) == 0 & calendar.get(Calendar.MINUTE) == 0) {
-                choice_person("-", "0");
+                choice_person("-", "0","0");
             } else if (calendar.get(Calendar.HOUR_OF_DAY) < 11) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        btn_yes.setVisibility(View.VISIBLE);
-                        btn_no.setVisibility(View.VISIBLE);
-                        textView.setVisibility(View.VISIBLE);
-                        editText_number_portion.setVisibility(View.VISIBLE);
+                        if (person[0]) {
+                            btn_yes.setVisibility(View.INVISIBLE);
+                            btn_no.setVisibility(View.INVISIBLE);
+                            textView.setVisibility(View.INVISIBLE);
+                            editText_number_portion.setVisibility(View.INVISIBLE);
+                        } else {
+                            btn_yes.setVisibility(View.VISIBLE);
+                            btn_no.setVisibility(View.VISIBLE);
+                            textView.setVisibility(View.VISIBLE);
+                            editText_number_portion.setVisibility(View.VISIBLE);
+                        }
                     }
                 });
             }
         } else {
-            choice_person("-", "0");
+            choice_person("-", "0", "0");
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    btn_yes.setVisibility(View.VISIBLE);
-                    btn_no.setVisibility(View.VISIBLE);
-                    textView.setVisibility(View.VISIBLE);
-                    editText_number_portion.setVisibility(View.VISIBLE);
+                    btn_yes.setVisibility(View.INVISIBLE);
+                    btn_no.setVisibility(View.INVISIBLE);
+                    textView.setVisibility(View.INVISIBLE);
+                    editText_number_portion.setVisibility(View.INVISIBLE);
                 }
             });
         }
@@ -286,10 +321,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_yes:
-                choice_person("yes", editText_number_portion.getText().toString());
+                choice_person("yes", editText_number_portion.getText().toString(), "1");
                 break;
             case R.id.btn_no:
-                choice_person("no", "0");
+                choice_person("no", "0", "1");
                 break;
             case R.id.btn_reset:
                 reset_database();
@@ -301,29 +336,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         for (int i = 0; i < arrayList_Name.size(); i++) {
             myDataBase = FirebaseDatabase.getInstance().getReference();
             myDataBase.child(arrayList_Name.get(i)).child("choice").setValue("-");
+            myDataBase.child(arrayList_Name.get(i)).child("answer_today").setValue("0");
             myDataBase.child(arrayList_Name.get(i)).child("name").setValue(arrayList_Name.get(i));
             myDataBase.child(arrayList_Name.get(i)).child("number_portion").setValue("0");
-            myDataBase.child(arrayList_Name.get(i)).child("phone").setValue(arrayList_Phone.get(i));
         }
     }
 
-    void choice_person(String str, String number_portion) {
+    void choice_person(String str, String number_portion, String answer_today) {
         SQLiteDatabase database = dbHelper.getWritableDatabase();
-        Cursor cursor = database.query("MYTABLE1_1", null, null, null, null, null, null);
+        Cursor cursor = database.query("TABLE1", null, null, null, null, null, null);
 
         int nameColIndex = cursor.getColumnIndex("name");
-        int phoneColIndex = cursor.getColumnIndex("phone");
 
         cursor.moveToFirst();
 
-        Person person = new Person(cursor.getString(nameColIndex), cursor.getString(phoneColIndex), str, number_portion);
+        Person person = new Person(cursor.getString(nameColIndex), answer_today, str, number_portion);
 
         ContentValues cv = new ContentValues();
         cv.put("name", cursor.getString(nameColIndex));
-        cv.put("phone", cursor.getString(phoneColIndex));
+        cv.put("answer_today", answer_today);
         cv.put("choice", str);
         cv.put("number_portion", number_portion);
-        database.insert("MYTABLE1_1", null, cv);
+        database.insert("TABLE1", null, cv);
 
         myDataBase = FirebaseDatabase.getInstance().getReference(cursor.getString(nameColIndex));
         myDataBase.setValue(person);
@@ -333,12 +367,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     static class DBHelper extends SQLiteOpenHelper {
         public DBHelper(Context context) {
-            super(context, "mytable1_1", null, 1);
+            super(context, "TABLE", null, 1);
         }
 
         @Override
         public void onCreate(SQLiteDatabase db) {
-            db.execSQL("create table MYTABLE1_1 (" + "name text," + "phone text," + "choice text," + "number_portion text" + ");");
+            db.execSQL("create table TABLE1 (" + "name text," + "answer_today text," + "choice text," + "number_portion text" + ");");
         }
 
         @Override

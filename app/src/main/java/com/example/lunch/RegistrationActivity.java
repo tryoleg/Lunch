@@ -21,7 +21,7 @@ import com.google.firebase.database.FirebaseDatabase;
 public class RegistrationActivity extends AppCompatActivity implements View.OnClickListener {
 
     Button btn_reg;
-    EditText editTextname, editTextphone;
+    EditText editTextname;
     DBHelper dbHelper;
 
     private DatabaseReference myDataBase;
@@ -33,7 +33,6 @@ public class RegistrationActivity extends AppCompatActivity implements View.OnCl
 
         btn_reg = (Button) findViewById(R.id.btn_registration);
         editTextname = (EditText) findViewById(R.id.editText);
-        editTextphone = (EditText) findViewById(R.id.editText2);
 
         btn_reg.setOnClickListener(this);
 
@@ -45,24 +44,24 @@ public class RegistrationActivity extends AppCompatActivity implements View.OnCl
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         switch (v.getId()) {
             case R.id.btn_registration:
-                if (!TextUtils.isEmpty(editTextname.getText().toString()) && !TextUtils.isEmpty(editTextphone.getText().toString())) {
+                if (!TextUtils.isEmpty(editTextname.getText().toString())) {
                     ContentValues cv = new ContentValues();
                     cv.put("name", editTextname.getText().toString());
-                    cv.put("phone", editTextphone.getText().toString());
+                    cv.put("answer_today", "0");
                     cv.put("choice", "-");
                     cv.put("number_portion", "0");
-                    db.insert("MYTABLE1_1", null, cv);
+                    db.insert("TABLE1", null, cv);
 
-                    Cursor cursor = db.query("MYTABLE1_1", null, null, null, null, null, null);
+                    Cursor cursor = db.query("TABLE1", null, null, null, null, null, null);
 
                     int nameColIndex = cursor.getColumnIndex("name");
-                    int phoneColIndex = cursor.getColumnIndex("phone");
+                    int answer_today = cursor.getColumnIndex("answer_today");
                     int choiceColIndex = cursor.getColumnIndex("choice");
                     int number_portion = cursor.getColumnIndex("number_portion");
 
                     cursor.moveToFirst();
 
-                    Person person = new Person(cursor.getString(nameColIndex), cursor.getString(phoneColIndex), cursor.getString(choiceColIndex), cursor.getString(number_portion));
+                    Person person = new Person(cursor.getString(nameColIndex), cursor.getString(answer_today), cursor.getString(choiceColIndex), cursor.getString(number_portion));
 
                     myDataBase = FirebaseDatabase.getInstance().getReference(cursor.getString(nameColIndex));
                     myDataBase.setValue(person);
@@ -88,12 +87,12 @@ public class RegistrationActivity extends AppCompatActivity implements View.OnCl
 
     class DBHelper extends SQLiteOpenHelper {
         public DBHelper(Context context) {
-            super(context, "mytable1_1", null, 1);
+            super(context, "TABLE", null, 1);
         }
 
         @Override
         public void onCreate(SQLiteDatabase db) {
-            db.execSQL("create table MYTABLE1_1 (" + "name text," + "phone text," + "choice text," + "number_portion text" + ");");
+            db.execSQL("create table TABLE1 (" + "name text," + "answer_today text," + "choice text," + "number_portion text" + ");");
         }
 
         @Override
